@@ -44,10 +44,16 @@ The 25 test methods include subtests, with a separate 300-operation deterministi
 - Unit tests are evidence only for the tested scenarios, not formal verification or universal absence of failures.
 - The research hypothesis about token use, architecture rediscovery and real agent reliability has **not been tested**.
 
-## Repository and release gate
+## Repository and release gate (updated 2026-11-02)
 
-**Local implementation and verification complete.** Remote branch, PR, independent review, and CI are **not complete**. Do not mark M2 as merged/released until those gates have been performed in a GitHub repository.
+- Repository: https://github.com/kefyusuf/agent-state-contract
+- Branch: `feat/m2-task-contract`
+- PR: https://github.com/kefyusuf/agent-state-contract/pull/1
+- Initial M2 commit: `c015d51a352d219871b588eb7411a910bef553c4`
+- GitHub Actions run `41351574644`: **success**; Python 3.10 and 3.13 both passed.
+- Review gate: **pending**. GitHub has no independent submitted approval; do not merge until reviewed.
+- Independent fixed-oracle snapshot and concurrent global-ID regression tests have been added. Updated CI is the authoritative evidence for this branch.
 
-Recommended new repository: `agent-state-contract`. Start with a blank repository (no generated README/.gitignore/license, to avoid conflicts). Do not attribute commits to AI systems or add automated AI co-author trailers.
+The original RED/GREEN output files were not committed with the reference implementation; the narrative above records the historical local workflow. The current tests and GitHub Actions runs are reproducible evidence for the published branch.
 
-**Next action:** Create/access the repository, import these files to a dedicated feature branch, run tests in CI, submit a PR and review. Avoid M3 until M2 gates pass.
+**Next action:** Obtain independent review of PR #1 and ensure current CI passes before merge. M3 remains out of scope until that gate closes.

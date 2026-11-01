@@ -2,7 +2,7 @@
 
 A small, provider-independent reference implementation of a **Task Lifecycle state contract** for coding-agent-accessible systems.
 
-**Status:** M2 local reference implementation; not a production service.  
+**Status:** M2 implementation and CI verified; independent PR review pending. Not a production service.  
 **Canonical design contract:** [`PROJECT_BASELINE_v0.1.md`](PROJECT_BASELINE_v0.1.md).
 
 ## Problem and hypothesis
@@ -30,7 +30,7 @@ Python 3.10+; standard library only. Verified locally using Python 3.13.5.
 python -m unittest discover -s tests -v
 ```
 
-The regression and acceptance tests include the 14-step canonical scenario, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, a controlled two-thread claim collision, and 300 deterministic mixed command attempts.
+The regression and acceptance tests include the 14-step canonical scenario, fixed expected snapshots independent of replay, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, controlled two-thread collisions, and 300 deterministic mixed command attempts.
 
 ## Example
 
@@ -68,20 +68,19 @@ The `actor_id` field is supplied by test clients. **This project does not authen
 
 ```text
 agent-state-contract/
-├── PROJECT_BASELINE_v0.1.md    # M0 and M1 decisions and contract
+├── .github/workflows/contract-tests.yml  # Python 3.10 and 3.13 CI
+├── PROJECT_BASELINE_v0.1.md              # M0/M1 canonical contract
 ├── README.md
-├── agent_state_contract.py     # M2 implementation, standard library
-├── tests/
-│   └── test_contract.py        # Acceptance, invariant, regression tests
-└── docs/
-    └── M2_VERIFICATION.md      # Local M2 test record
+├── agent_state_contract.py               # M2 reference implementation
+├── tests/test_contract.py                # Acceptance and regression tests
+└── docs/M2_VERIFICATION.md               # Verification evidence and gate
 ```
 
 ## Scope and milestone control
 
 - **M0:** Closed — product problem and exclusions defined.
 - **M1:** Frozen v0.1 contract — no language or framework requirements.
-- **M2:** Local RED → GREEN → regression verification finished. A dedicated Git branch and CI workflow are prepared; PR review and CI must pass before merge.
-- **M3:** Optional evidence-backed comparison of bounded versus unconstrained agent behavior. No agent integration or token-use claim in M2.
+- **M2:** Local RED → GREEN → regression verification and GitHub Actions (Python 3.10/3.13) completed. PR #1 remains open for independent review and merge gate.
+- **M3:** Planned evidence-backed comparison of bounded versus unconstrained agent behavior, not started while M2 review is pending. No agent integration or token-use claim in M2.
 
 Do not add infrastructure or generic extensibility in response to speculative future needs. Any contract change requires an explicit revision to the baseline and corresponding tests.
