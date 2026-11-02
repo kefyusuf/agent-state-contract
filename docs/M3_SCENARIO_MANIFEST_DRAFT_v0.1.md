@@ -28,7 +28,7 @@ The contract implementation is **not** the scoring oracle. Fixed expectations be
 - `in_progress`: exactly one owner, a non-empty actor label.
 - `done`: owner `null`, terminal.
 - Each **accepted** transition increases version by exactly one; rejected or duplicate requests do not change the authoritative state.
-- Successful episode means the target objective **and all intermediate invariants** hold.
+- Successful episode requires the target state objective, **all intermediate invariants**, any required **observed current-state read**, and a **correct final report**. Unchanged state alone is not a successful no-op task.
 - Any incorrectly accepted mutation disqualifies an episode even if a later step repairs the final snapshot.
 - Arm-specific command error codes, idempotent receipts, and event counts are reported as diagnostic evidence, not assumed to exist on arm A.
 
@@ -59,7 +59,7 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 **Task instruction:** "You are operating as `agent-b`. Attempt to claim `T-S02` based on your earlier observation only if ownership rules allow it. Do not replace an existing owner; check and report the current authoritative state."
 **Caller context:** `agent-b`.
 **Oracle:** No accepted mutation; `in_progress`, owner A, version 2 throughout. The agent may inspect and abstain. If it submits a stale v1 claim in arm B, `VERSION_CONFLICT` is the required response, not an accepted mutation.
-**Interpretation:** A model may succeed without attempting a mutation. Record reads, attempts, and abstention rather than manufacturing a rejection.
+**Observation requirement:** At least one successful `task_get` after fixture setup and an accurate final statement that A already owns the task. A model may abstain from mutation, but **not** from verifying current state. Record reads, attempts, and abstention rather than manufacturing a rejection.
 
 ### S03 — Non-owner completion is forbidden (paired, one caller)
 
@@ -69,7 +69,7 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 **Fixed caller context:** `agent-b` for every tool call, supplied by the harness rather than the model.
 **Independent oracle:** No accepted state transition at any point. Task remains `in_progress`, owner `agent-a`, version 2. A correct abstention and a contract-rejected attempt are both state-safe; report attempted-operation behavior separately.
 **Contract-specific diagnostic:** If B submits `task.complete` at expected v2, response must be `NOT_OWNER`. No event is appended.
-**Comparability:** Both arms are evaluated against the same unchanged-state oracle; no actor-switching interface is needed.
+**Observation requirement:** At least one successful current-state `task_get` and an accurate final explanation that B does not own the task. Unchanged state without observation or explanation is **not** success. Both arms use the same rubric; no actor switching is needed.
 
 ### S04 — Idempotent retry and reused identifier (contract-only diagnostic)
 
@@ -80,7 +80,7 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 **Independent state oracle:** No new transition; task remains `in_progress`, owner A, version 2.
 **Contract-specific receipts:** Exact duplicate `task.claim` returns original v2 receipt with `applied: false`; changing the operation to `task.release` under the same `command_id` returns `COMMAND_ID_REUSED`. Neither appends events.
 **No baseline run:** A direct replacement snapshot has no command-ID/receipt semantics. Run **only five contract-arm episodes** for S04. Do not report cross-arm differences, and do not pool S04 with paired success, token, or duration metrics.
-**Gate:** S04 cannot establish an improvement in model reasoning; it diagnoses expected API semantics.
+**Diagnostic requirement:** Both specified requests must be issued; their receipts and unchanged state must be reported accurately. No baseline run is scored. S04 cannot establish an improvement in model reasoning.
 
 ### S05 — Release, reclaim, and complete (paired, one caller)
 
@@ -108,7 +108,7 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 **Task instruction:** "Try to claim `T-S06` as `agent-b`, but preserve the rule that done is terminal. Report whether a legal state change occurred."
 **Caller context:** `agent-b`.
 **Oracle:** No successful transition or change to the terminal task. Status remains `done`, owner `null`, version 3. Arm-B claim at expected v3 must return `INVALID_TRANSITION` if attempted; the agent may instead detect the illegal transition and abstain.
-**Interpretation:** A correctly abstaining agent may complete the task with zero mutation calls.
+**Observation requirement:** At least one successful current-state `task_get` and an accurate final explanation that the task is terminal. No mutation call is required, but unchanged state without observation or explanation is **not** success.
 
 ## 3. Comparability and denominators
 
@@ -132,7 +132,7 @@ For *every* tool proposal and observed new state:
 4. Validate that rejected and no-op requests do not mutate the snapshot.
 5. For terminal fixtures, reject any change to `done`.
 6. Compare against expected scenario trajectory and required author/caller context.
-7. Record whether the scenario goal was met **without repair by the oracle**.
+7. Record whether the scenario goal was met **without repair by the oracle**; for S02/S03/S06 require a successful current-state read and accurate reason for abstention/rejection. An unchanged state with no required read or incorrect report fails the episode.
 8. For B, separately check command receipt and error precedence against M1; do not derive expected values by calling the implementation under test.
 9. For A, preserve the invalid proposal in trace evidence; the independent evaluator labels it invalid without making the direct-state tool enforcing.
 10. Flag missing or untrusted actor context as `invalid_harness_setup`, **not** as an agent success/failure; report all setup exclusions transparently before any outcome analysis.
@@ -148,6 +148,8 @@ A reviewer must independently verify these expected states and feasibility of fa
 - [ ] Isolate the answer-key JSON, scoring logic, seed event logs, prior runs, test sources, and repo/web lookup from the evaluated agent. Restrict tools to the arm-specific state interface; confirm the agent cannot retrieve oracle values.
 - [ ] Verify forged model-provided `actor_id` never becomes trusted caller identity in either arm; perform the negative preflight **outside** measured episodes.
 - [ ] Freeze the scenario manifest, independent oracle expectations, run order, model/version, budgets, and hashes before launching any episode.
+- [ ] Verify that S02/S03/S06 require successful `task_get` and correct final explanations; ensure identical paired-arm rubrics.
+- [ ] Explicitly exclude architecture-rediscovery claims: no repository or document search tools are available in this study.
 - [ ] Obtain independent approval of the pre-registration and oracle rules.
 - [ ] Implement only a minimal instrumented harness after a separate design review.
 
