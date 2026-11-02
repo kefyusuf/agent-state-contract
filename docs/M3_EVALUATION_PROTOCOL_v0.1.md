@@ -58,23 +58,23 @@ Each scenario begins from a fresh and explicitly declared fixture. The success o
 | --- | --- | --- |
 | S01 | Create T1, claim as A, complete as A | `done`, no owner; correct number of successful state transitions |
 | S02 | Let A claim T1; B has a stale claim attempt | No simultaneous owners, B cannot replace A, task remains `in_progress` with A |
-| S03 | B attempts to complete A-owned T1; A then completes | B does not change state; final `done` and no owner. Requires predefined, trusted synthetic caller-context switching |
+| S03 | B attempts to complete an A-owned task | No successful mutation; task remains `in_progress`, owner A, unchanged version. B is the fixed caller for the entire episode |
 | S04 | Retry an accepted command after later activity, then reuse its ID with changed contents | Contract-specific idempotency and command-ID semantics; **diagnostic only, excluded from paired-primary comparison** |
-| S05 | A claims, releases, B claims, B completes | Correct intermediate statuses and final `done`; no ownership leak. Requires predefined, trusted synthetic caller-context switching |
+| S05 | A claims, releases, reclaims, and completes | Correct intermediate statuses and final `done`; no ownership leak. A is the fixed caller for the entire episode |
 | S06 | Attempt to change terminal `done` task | No new state transition; task stays `done` |
 
 For B, compare accepted/rejected command receipts to M1's fixed expected error precedence. For A, record *all* proposals and independently check every resulting intermediate snapshot. This secondary detail is arm-specific and must not be collapsed into a shared "invalid operations" percentage.
 
 A scenario manifest must fix exact initial snapshots, actor identities, task IDs, expected outcomes, prompt text, and allowed tool descriptions **before** execution. The companion draft proposes fixtures and independently specified oracles but is **not yet frozen**. No changing scenarios after seeing results.
 
-**Comparability correction:** S04 tests command-ID and duplicate-receipt semantics that a direct-state-edit baseline does not expose. Its ten episodes are diagnostic, not comparable in a common primary outcome. Do not pool S04 with the five matched scenarios for success, relative tokens, or duration. The primary paired population is S01/S02/S03/S05/S06. The synthetic actor handoff for S03/S05 must be justified and controlled before those scenarios are executable.
+**Comparability correction:** S04 tests command-ID and duplicate-receipt semantics that a direct-state-edit baseline does not expose. Run S04 **only in the contract arm** as a five-episode diagnostic. Never pool it with the five matched scenarios for success, relative tokens, or duration. The paired-primary population is S01/S02/S03/S05/S06. S03 uses B throughout, and S05 uses A throughout; no within-episode actor switching is required.
 
 ## 5. Matched execution
 
 1. Complete the M2 independent review and merge first.
 2. Freeze the M2 source SHA, scenario manifest SHA, model identifier/version, inference settings, tool descriptions, and token/time budgets.
 3. Use one agent model and the same system instructions, task goals, maximum steps, and budget across both arms. Arm-specific tool instructions may differ only to explain the available interface.
-4. Plan **six scenarios × five repetitions × two arms = 60 episodes** total. **50** are primary paired episodes (S01/S02/S03/S05/S06); **10** are S04 arm-specific diagnostic episodes, excluded from aggregate paired comparisons. Use paired seeds where supported; where not supported, explicitly report non-determinism.
+4. Plan **55 episodes total**: five primary scenarios × five repetitions × two arms = **50 matched episodes**, plus one contract-only diagnostic scenario (S04) × five repetitions = **5 episodes**. Pair seeds only for the 50 comparable episodes where supported; otherwise report non-determinism. No baseline S04 runs are planned.
 5. Counterbalance arm order across pairs to reduce ordering/caching bias. Do not carry state, conversation history, examples, or previous outcomes between episodes.
 6. No human repair during an episode. Record all failures, API errors, and timeouts, including those excluded from a separately reported *valid-run* analysis.
 7. Preserve raw tool call and response traces locally in a structured record. Do not commit provider secrets, raw credentials, or private prompts.
@@ -84,7 +84,7 @@ The experiment is **exploratory**: 5 paired repeats per scenario are insufficien
 
 ## 6. Metrics, exact denominators, and reporting
 
-**Primary endpoint — correct episode completion:** count of episodes whose *full observed trajectory* satisfies the independent state invariants and scenario goal, divided by **all attempted episodes in the five genuinely comparable scenarios** (S01/S02/S03/S05/S06: 25 attempted per arm, 50 total). Count timeouts and tool/model errors as failures. Report the scenarios individually. S04's 10 attempted episodes must be presented separately as a contract-specific diagnostic without aggregate paired claims.
+**Primary endpoint — correct episode completion:** count of episodes whose *full observed trajectory* satisfies the independent state invariants and scenario goal, divided by **all attempted episodes in the five genuinely comparable scenarios** (S01/S02/S03/S05/S06: 25 attempted per arm, 50 total). Count timeouts and tool/model errors as failures. Report the scenarios individually. S04's 5 contract-only episodes must be presented separately as a diagnostic without any cross-arm comparison.
 
 **Secondary measures (all reported even if unfavorable):**
 - **Invariant violations:** number of episodes with one or more forbidden intermediate or final states; use one binary episode-level rate as well as total violations.
@@ -128,7 +128,7 @@ Allowed episode status values are `completed`, `timeout`, `tool_error`, and `mod
 ## 8. Decision rules (locked before running)
 
 - **M3 execution gate:** No run until M2 PR #1 is merged after independent review and passing CI.
-- **Protocol integrity gate:** Both arms share the task rubric and have complete, independently checked oracle fixtures and a frozen manifest; the S03/S05 synthetic caller contexts are securely assigned by the test adapter, not by a model's asserted identity; S04 is labeled non-comparable. If these conditions are not met, stop and revise the protocol **before** collecting outcomes.
+- **Protocol integrity gate:** Both arms share the task rubric and have complete, independently checked oracle fixtures and a frozen manifest; each episode has exactly one fixed trusted synthetic caller identity supplied by its harness, never by a model's asserted identity; S04 is contract-only and non-comparable. If these conditions are not met, stop and revise the protocol **before** collecting outcomes.
 - **Safety gate:** Contract arm must exhibit zero *accepted* state invariant violations across test and benchmark runs. Any such failure is a defect investigation, not a reason to discard the episode.
 - **Evidence gate:** Report completion rate alongside token, time, and exploration costs. A guardrail-only gain must not be described as a gain in agent reasoning or token efficiency.
 - **Product decision:** Continue with the same narrow contract only if the study demonstrates a useful reliability/complexity trade-off; otherwise document the negative result and stop or revise the hypothesis explicitly.
@@ -139,4 +139,13 @@ No percentage improvement, speed-up, token reduction, or cross-language portabil
 
 Deferred, not approved: external agents or provider SDKs, CLI benchmark runner, new APIs/adapters, model comparisons, cross-language ports, production state storage, additional workflow domains, optimization of event scanning, and packaging.
 
-**Next approved action:** independent review/merge of M2 PR #1, then independent review of the candidate fixture/oracle draft, resolution of caller-context and S04 comparability concerns, and freezing of scenario manifest and expected outputs. Implementation decisions for a minimal harness require a separate review at that point.
+**Next approved action:** independent review/merge of M2 PR #1, then independent review of the revised candidate fixture/oracle draft, confirmation of fixed actor identity per episode, and freezing of the manifest and expected outputs. Implementation decisions for a minimal harness require a separate review at that point.
+
+## 10. Pre-registration simplification record (2026-11-02)
+
+Before any benchmark execution, two design constraints were tightened:
+
+1. **One trusted actor per episode.** S03 now asks fixed actor B to evaluate an unauthorized completion without switching to A afterward. S05 uses fixed actor A for claim → release → reclaim → complete. This removes unnecessary caller-context switching infrastructure; M2's existing unit tests still cover two distinct actor identities and ownership handoff.
+2. **No meaningless baseline diagnostics.** S04 tests deduplication receipts unique to the command contract, so only the B contract arm runs it. The exploratory allocation is **50 paired + 5 contract-only = 55 episodes**. This preserves primary paired denominators while avoiding baseline calls with no equivalent command-ID semantics.
+
+No observations were collected before these changes. Both protocol and scenario-manifest documents remain **drafts pending independent review**. No new runtime behavior was approved.
