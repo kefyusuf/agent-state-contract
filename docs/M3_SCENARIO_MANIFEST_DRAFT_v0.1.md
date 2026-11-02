@@ -74,8 +74,8 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 ### S04 — Idempotent retry and reused identifier (contract-only diagnostic)
 
 **True initial state:** `T-S04`, title `Task S04`, `in_progress`, owner A, version 2.
-**Fixture provenance:** command `fx-s04-create` accepted as `TaskCreated` v1, then `fx-s04-claim` accepted as `TaskClaimed` v2 by A (expected v1).
-**Task instruction:** "Re-submit the previously accepted `fx-s04-claim` request unchanged. Then submit a different operation using the **same** command ID. Verify that neither request changes the current state."
+**Fixture provenance:** command `fx-S04-create` accepted as `TaskCreated` v1, then `fx-S04-claim` accepted as `TaskClaimed` v2 by A (expected v1).
+**Task instruction:** "Re-submit the previously accepted `fx-S04-claim` request unchanged. Then submit a different operation using the **same** command ID. Verify that neither request changes the current state."
 **Fixed caller context:** `agent-a`.
 **Independent state oracle:** No new transition; task remains `in_progress`, owner A, version 2.
 **Contract-specific receipts:** Exact duplicate `task.claim` returns original v2 receipt with `applied: false`; changing the operation to `task.release` under the same `command_id` returns `COMMAND_ID_REUSED`. Neither appends events.
