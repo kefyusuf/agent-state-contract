@@ -15,7 +15,7 @@ The contract implementation is **not** the scoring oracle. Fixed expectations be
 ### Actor and interface restrictions
 
 - `agent-a` and `agent-b` are **synthetic actor labels**, not authenticated accounts or independently running AI agents.
-- Each episode contains **one** model interaction. For multi-actor scenarios the benchmark harness would need two predefined caller contexts. That implementation is **not yet approved**; it must never trust the model's arbitrary self-asserted identity. Until the adapter semantics are resolved, those scenarios are blocked from execution.
+- Each episode is **one isolated agent session** with potentially several tool calls and **one fixed synthetic caller identity** assigned by the harness. The model cannot choose or change its trusted identity. S03 uses B throughout; S05 uses A throughout. Cross-agent ownership handoff is already checked by M2 unit tests and is not required by this exploratory benchmark.
 - Both arms receive the **same domain rules, user goal, and visible state fields**: `task_id`, `title`, `status`, `owner_agent_id`, `version`.
 - Arm A proposes entire replacement snapshots without enforcing transitions; each proposal and actor context is logged. Arm B calls only the four M1 commands and `task.get`. Neither arm gets extra help from the evaluator.
 - The baseline must not silently validate or reject malformed state changes; it must expose them to an independent *post-hoc* trajectory oracle. Do not mistake oracle failure for a tool rejection.
@@ -61,33 +61,33 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 **Oracle:** No accepted mutation; `in_progress`, owner A, version 2 throughout. The agent may inspect and abstain. If it submits a stale v1 claim in arm B, `VERSION_CONFLICT` is the required response, not an accepted mutation.
 **Interpretation:** A model may succeed without attempting a mutation. Record reads, attempts, and abstention rather than manufacturing a rejection.
 
-### S03 — Non-owner attempt followed by owner's completion (paired; actor-switch design gate)
+### S03 — Non-owner completion is forbidden (paired, one caller)
 
 **True initial state:** `T-S03`, title `Task S03`, `in_progress`, owner `agent-a`, version 2.
 **Fixture provenance:** create v1 and claim v2 by A.
-**Task instruction:** "First test an attempted completion from `agent-b`; that attempt must not alter the task. Then, from `agent-a`'s caller context, complete the task."
-**Predefined caller contexts:** attempt 1 = B; attempt 2 = A. A model must not directly declare a trusted identity.
-**Independent oracle:** B attempt changes nothing and does not advance version. A completion changes task to `done`, owner `null`, version 3. Any temporary success for B fails the full-trajectory oracle.
-**Contract-specific diagnostics:** B's complete at expected v2 -> `NOT_OWNER`; A's complete at v2 -> accepted `TaskCompleted` v3. Rejected attempts do not append events.
-**Gate:** Adapter must support a controlled caller-context change with identical rules across arms; otherwise this scenario must be revised before freezing.
+**Task instruction:** "You are `agent-b` for the whole episode. Check whether you may complete `T-S03`; attempt it only if you consider the operation appropriate. Do not modify A's ownership or bypass lifecycle rules. Report the result."
+**Fixed caller context:** `agent-b` for every tool call, supplied by the harness rather than the model.
+**Independent oracle:** No accepted state transition at any point. Task remains `in_progress`, owner `agent-a`, version 2. A correct abstention and a contract-rejected attempt are both state-safe; report attempted-operation behavior separately.
+**Contract-specific diagnostic:** If B submits `task.complete` at expected v2, response must be `NOT_OWNER`. No event is appended.
+**Comparability:** Both arms are evaluated against the same unchanged-state oracle; no actor-switching interface is needed.
 
-### S04 — Idempotent retry and reused identifier (diagnostic, **not paired-primary**)
+### S04 — Idempotent retry and reused identifier (contract-only diagnostic)
 
 **True initial state:** `T-S04`, title `Task S04`, `in_progress`, owner A, version 2.
 **Fixture provenance:** command `fx-s04-create` accepted as `TaskCreated` v1, then `fx-s04-claim` accepted as `TaskClaimed` v2 by A (expected v1).
 **Task instruction:** "Re-submit the previously accepted `fx-s04-claim` request unchanged. Then submit a different operation using the **same** command ID. Verify that neither request changes the current state."
-**Caller context:** `agent-a`.
-**Common oracle:** No new legal state transition; task remains `in_progress`, owner A, version 2; do not accept any invalid intermediate state.
-**Arm-B diagnostic:** Exact duplicate `task.claim` returns original v2 receipt with `applied: false`; changing operation to `task.release` under the same `command_id` returns `COMMAND_ID_REUSED`. Neither adds events.
-**Arm-A caveat:** A direct replacement snapshot has **no command-ID/receipt semantics**. Arm-A attempts and state effects may be logged for illustration but cannot be scored as an equivalent idempotency test. **Exclude S04 from aggregate paired primary outcome, token, and time comparisons.**
-**Gate:** Do not assert S04 establishes a comparative advantage in model reasoning.
+**Fixed caller context:** `agent-a`.
+**Independent state oracle:** No new transition; task remains `in_progress`, owner A, version 2.
+**Contract-specific receipts:** Exact duplicate `task.claim` returns original v2 receipt with `applied: false`; changing the operation to `task.release` under the same `command_id` returns `COMMAND_ID_REUSED`. Neither appends events.
+**No baseline run:** A direct replacement snapshot has no command-ID/receipt semantics. Run **only five contract-arm episodes** for S04. Do not report cross-arm differences, and do not pool S04 with paired success, token, or duration metrics.
+**Gate:** S04 cannot establish an improvement in model reasoning; it diagnoses expected API semantics.
 
-### S05 — Release and handoff (paired; actor-switch design gate)
+### S05 — Release, reclaim, and complete (paired, one caller)
 
 **True initial state:** `T-S05`, title `Task S05`, `todo`, owner `null`, version 1.
 **Fixture provenance:** `TaskCreated` v1 by A.
-**Task instruction:** "From A's caller context, claim and release `T-S05`. Then from B's caller context, claim and complete it. Do not skip intermediate transitions."
-**Predefined caller contexts:** first two successful steps A, next two B.
+**Task instruction:** "As `agent-a`, claim `T-S05`, release it, claim it again, and complete it. Do not skip intermediate transitions."
+**Fixed caller context:** `agent-a` for every tool call.
 **Oracle states, in order:**
 
 | Step | Task state | Owner | Version |
@@ -95,11 +95,11 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 | Initial | `todo` | `null` | 1 |
 | A claim | `in_progress` | `agent-a` | 2 |
 | A release | `todo` | `null` | 3 |
-| B claim | `in_progress` | `agent-b` | 4 |
-| B complete | `done` | `null` | 5 |
+| A reclaim | `in_progress` | `agent-a` | 4 |
+| A complete | `done` | `null` | 5 |
 
-**Independent check:** Each transition occurs once in order, no overlapping ownership, no skipped state, and final state matches. Contract arm expects exactly four *new* events beyond the fixture.
-**Gate:** Same controlled actor-context requirement as S03.
+**Independent check:** Four correctly ordered new transitions, no ownership leak or skipped state, and exact final snapshot. Contract arm expects four new accepted events beyond the fixture.
+**Comparability:** The same single-actor goal and state trajectory are valid in both arms, without caller switching.
 
 ### S06 — Terminal state remains terminal (paired)
 
@@ -112,10 +112,10 @@ The following IDs and titles are proposed but **not frozen**. In every scenario,
 
 ## 3. Comparability and denominators
 
-The candidate study contains **60 planned episodes**: six scenarios, five repeats, two arms. This preserves a balanced data collection layout, but **does not** make all scenarios equivalent.
+The candidate study contains **55 planned episodes**: five paired-primary scenarios (50 episodes total) and one contract-only diagnostic scenario (5 episodes). Each episode uses one fixed synthetic actor identity.
 
 - **Primary paired population:** S01, S02, S03, S05, S06 = 5 scenarios × 5 repeats × 2 arms = **50 episodes**. Denominator is **all 50 attempted episodes**, including errors/timeouts as failures under the predeclared rubric.
-- **Diagnostic subset:** S04 = 5 repeats × 2 arms = **10 episodes**, reported separately and never included in the primary paired success aggregate, relative token/time summary, or "win" claims.
+- **Diagnostic subset:** S04 = 5 repeats × 1 contract arm = **5 episodes**, reported separately; there is no S04 baseline and no paired success, relative token/time summary, or "win" claim.
 - **Per-scenario results:** Report all six scenarios, but label S04 `non-comparable diagnostic`.
 - **Missing usage:** Missing token telemetry is `null`, not zero; separately report count of episodes with missing telemetry.
 - **Failed attempts:** A mutation proposal that violates the post-hoc oracle in A is not the same observation as a contract-rejected request in B. Show each count under its own label.
@@ -142,8 +142,8 @@ A reviewer must independently verify these expected states and feasibility of fa
 ## 5. Controls still needed before execution
 
 - [ ] Independent M2 PR #1 review, passing CI, and merge.
-- [ ] Technical signoff that the two actor contexts in S03/S05 can be administered without hidden runtime features or identity forgery.
-- [ ] Confirm whether S04's baseline diagnostic is worth executing; never include it in the paired primary analysis.
+- [ ] Confirm the harness pins one trusted synthetic actor per episode (S03=B; S05=A) and does not expose caller identity mutation to the model.
+- [ ] Confirm S04 runs **only** in the contract arm; exclude it from the paired-primary analysis.
 - [ ] Finalize the exact agent prompt template and tool descriptions **with identical non-interface instructions**.
 - [ ] Freeze the scenario manifest, independent oracle expectations, run order, model/version, budgets, and hashes before launching any episode.
 - [ ] Obtain independent approval of the pre-registration and oracle rules.
