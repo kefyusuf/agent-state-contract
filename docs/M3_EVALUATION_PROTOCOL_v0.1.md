@@ -6,7 +6,7 @@
 **M2 baseline:** `PROJECT_BASELINE_v0.1.md`; Task Lifecycle v0.1 only.
 **Change policy:** This document is an experimental design, not an expansion of the runtime contract.
 **Candidate fixtures and oracle:** [`M3_SCENARIO_MANIFEST_DRAFT_v0.1.md`](M3_SCENARIO_MANIFEST_DRAFT_v0.1.md) — proposed only, not yet frozen.
-**Machine-readable expected outcomes:** [`M3_ORACLE_VECTORS_DRAFT_v0.1.json`](M3_ORACLE_VECTORS_DRAFT_v0.1.json) — hidden from evaluated agents; manually derived fixed reference trajectories and conditional receipts, subject to independent audit.
+**Machine-readable expected outcomes:** [`M3_ORACLE_VECTORS_DRAFT_v0.1.json`](M3_ORACLE_VECTORS_DRAFT_v0.1.json) — public for reviewer inspection, but **must be inaccessible to evaluated agents during episodes**. This requires explicit tool/file/network isolation; merely withholding a file from the prompt is insufficient. Expected values require independent audit.
 
 ## 1. Question and falsifiable claims
 
@@ -150,3 +150,17 @@ Before any benchmark execution, two design constraints were tightened:
 2. **No meaningless baseline diagnostics.** S04 tests deduplication receipts unique to the command contract, so only the B contract arm runs it. The exploratory allocation is **50 paired + 5 contract-only = 55 episodes**. This preserves primary paired denominators while avoiding baseline calls with no equivalent command-ID semantics.
 
 No observations were collected before these changes. Both protocol and scenario-manifest documents remain **drafts pending independent review**. No new runtime behavior was approved.
+
+## 11. Evaluation integrity preflight — access and identity boundaries
+
+**Protocol amendment before data collection:** The public repository contains both the runtime under test and the proposed answer key. If an evaluated agent can read the oracle, source tests, fixtures, GitHub pages, or run artifacts that disclose expected answers, the result cannot support the claimed comparison. Similarly, `actor_id` in the Python command envelope is not a trusted caller identity by itself.
+
+Before executing any benchmark episode, an independently reviewed minimal harness plan must demonstrate all of the following:
+
+1. **Agent allowlist:** Each arm receives only its fixed task prompt, identical Task Lifecycle rules, applicable interface description, and ordinary tool results. Do not expose `docs/M3_ORACLE_VECTORS_DRAFT_v0.1.json`, the evaluator, scenario expected snapshots, test source, or prior episode traces. No repository browsing, search, web access, or arbitrary file-read tools during the episode. A repo document needed for domain rules must be supplied as a separate, reviewed excerpt with the oracle excluded.
+2. **Independent scoring boundary:** The scorer runs **outside** the agent-accessible context. It reads the complete immutable tool trace only after the episode and never supplies intermediate scoring hints to either arm. Log attempted direct edits and command responses; do not silently repair invalid edits.
+3. **Host-controlled actor:** For each episode, fix `trusted_actor_id` in the harness, not the model prompt alone. The contract-arm adapter must force that identity into `execute()` or reject mismatched model-provided `actor_id` before it reaches the runtime. The direct-edit arm must have the **same** host actor identity, logged separately from any proposed snapshot fields. Neither arm can change its trusted actor by generating a tool argument.
+4. **Preflight checks:** Confirm an attempted oracle/repository read is unavailable to the agent; confirm a command with a forged actor cannot execute as the forged identity; confirm the scorer has not supplied expected outputs to the agent. These are **setup qualification checks**, performed only after the M2 gate and **not counted as benchmark episodes**. If any check fails, mark `invalid_harness_setup`, repair before collecting observations, and report the failure.
+5. **Fixture isolation:** Initialize each episode's seed state outside the agent session; do not provide the model the seed event log or prior run history unless a scenario explicitly permits an earlier observation. Retain a versioned, hashed manifest outside the accessible tool surface.
+
+These preflight controls do not add production authentication, a new API, or general agent infrastructure to the Task Lifecycle contract. The adapter is a narrowly scoped measurement boundary whose implementation remains **unapproved until M2 review/merge and an independent harness design review**.
