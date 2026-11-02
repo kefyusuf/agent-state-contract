@@ -17,7 +17,7 @@ Three separate hypotheses must not be conflated:
 
 - **H1 (system-level enforcement):** A validated command boundary prevents invariant-violating writes that an unrestricted direct-edit path might permit. This is a guardrail result, not evidence that the agent reasons better.
 - **H2 (agent execution):** Given identical task rules and goals, the contracted interface changes end-to-end correct completion and recovery after rejected requests.
-- **H3 (agent effort):** The contracted interface changes measured input/output tokens, investigation reads/searches, action attempts, and elapsed time. The direction of the effect is **unknown**.
+- **H3 (agent effort):** The contracted interface changes measured input/output tokens, task-state reads, action attempts, and elapsed time. The direction of the effect is **unknown**. This tool-isolated study does **not** measure repository architecture rediscovery.
 
 **Null or unfavorable outcomes are valid.** If commands increase overhead without increasing completion reliability, report that and do not widen the product to rescue the hypothesis.
 
@@ -86,13 +86,15 @@ The experiment is **exploratory**: 5 paired repeats per scenario are insufficien
 
 ## 6. Metrics, exact denominators, and reporting
 
-**Primary endpoint — correct episode completion:** count of episodes whose *full observed trajectory* satisfies the independent state invariants and scenario goal, divided by **all attempted episodes in the five genuinely comparable scenarios** (S01/S02/S03/S05/S06: 25 attempted per arm, 50 total). Count timeouts and tool/model errors as failures. Report the scenarios individually. S04's 5 contract-only episodes must be presented separately as a diagnostic without any cross-arm comparison.
+**Primary endpoint — correct episode completion:** count of episodes satisfying **all three** predeclared conditions: (i) the *full observed state trajectory* preserves invariants and achieves the scenario's required state objective, (ii) any required state-read evidence actually occurred in the trace, and (iii) the final response correctly reports the task outcome or reason no legal change occurred. Divide by **all attempted episodes in the five genuinely comparable scenarios** (S01/S02/S03/S05/S06: 25 attempted per arm, 50 total). Count timeouts and tool/model errors as failures. Report scenarios individually. S04's 5 contract-only episodes are diagnostic only, with no cross-arm comparison.
+
+**Mandatory observation checks:** S02, S03, and S06 each require at least one successful current-state `task_get` call **after fixture setup** (not a stale observation), plus a correct explanation of the currently owned or terminal status. Without both, unchanged state alone is insufficient for success. S01 and S05 require the specified ordered transitions and an accurate completion report; S04 requires the two specified contract calls, unchanged state, and accurate receipt reporting. Apply the same observation and final-report rubric to both arms of each paired scenario.
 
 **Secondary measures (all reported even if unfavorable):**
 - **Invariant violations:** number of episodes with one or more forbidden intermediate or final states; use one binary episode-level rate as well as total violations.
 - **Recovery:** proportion of episodes that reach a correct final state after a failed attempt (with denominator = episodes exhibiting a failed attempt), if any.
 - **Token usage:** provider-reported prompt/input and completion/output tokens per episode, plus total; missing usage is `null` and must not be inferred.
-- **Exploration reads:** count of state/document/search operations not necessary to execute the requested state transition; classifications must be rule-based and frozen in advance. In this tiny domain, the metric may be uninformative.
+- **Task-state reads:** count of `task_get` calls per episode; distinguish required observation reads (S02/S03/S06) from additional reads. A read is not automatically wasteful: recovery or safety checks may justify extras. The experiment exposes no repository/document/search tools, so **architecture rediscovery cannot be measured** and must not appear as an efficacy claim.
 - **Elapsed time:** wall-clock seconds measured around the same episode boundary for both arms.
 - **Tool calls and state-change proposals:** count each; also report command rejections for B and rejected-by-oracle direct edits for A **separately**.
 - **Contract overhead:** input tokens and tool-description bytes provided only because of the contract, explicitly identified rather than hidden.
@@ -115,9 +117,11 @@ Each report must show per-scenario raw counts, paired results, medians or distri
   "status": "completed",
   "goal_satisfied": null,
   "invariants_preserved": null,
+  "required_read_satisfied": null,
+  "final_report_accurate": null,
+  "state_reads": null,
   "input_tokens": null,
   "output_tokens": null,
-  "exploration_reads": null,
   "tool_calls": null,
   "mutation_attempts": null,
   "failed_attempts": null,
@@ -165,3 +169,13 @@ Before executing any benchmark episode, an independently reviewed minimal harnes
 5. **Fixture isolation:** Initialize each episode's seed state outside the agent session; do not provide the model the seed event log or prior run history unless a scenario explicitly permits an earlier observation. Retain a versioned, hashed manifest outside the accessible tool surface.
 
 These preflight controls do not add production authentication, a new API, or general agent infrastructure to the Task Lifecycle contract. The adapter is a narrowly scoped measurement boundary whose implementation remains **unapproved until M2 review/merge and an independent harness design review**.
+
+## 12. Observation and final-report scoring amendment (2026-11-02)
+
+The initial draft was vulnerable to **no-op false positives**: an agent could leave an already protected task unchanged and be scored correct without checking the current state or identifying why a mutation was illegal. Before running any episodes, the primary success rubric now requires observable state-read evidence for S02, S03, and S06, and an accurate terminal report. A read from a stale fixture, an unverified assertion in the final text, or a scorer-generated explanation does not count. S01/S05 still require the complete ordered state trajectory.
+
+The `task_get` read exists in both arms, so this evidence rule is symmetric. Classify failed/unavailable reads separately and do not assign correctness to a model merely for abstaining. The contract-only S04 requires its two diagnostic requests and accurate receipts.
+
+**Measurement limitation:** This study deliberately denies repository browsing. It can evaluate state-use efficiency but **cannot** validate the broader architecture-rediscovery portion of the product hypothesis. Do not invent repository-discovery savings or treat raw state-read counts as architectural understanding.
+
+These are prospective specification corrections. No model invocation, benchmark run, or observed outcome preceded them; the protocol remains a draft until the independent review gate closes.
