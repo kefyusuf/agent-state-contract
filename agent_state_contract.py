@@ -53,6 +53,25 @@ def _valid_command(command):
     return payload == {}
 
 
+
+def _snapshot_command(command):
+    """Detach a command envelope and its one-level payload from caller-owned dicts.
+
+    The v0.1 wire shape contains no nested mutable command fields beyond payload.
+    Callers must not mutate input concurrently while this snapshot is captured.
+    """
+    if not isinstance(command, dict):
+        return None
+    try:
+        snapshot = dict(command)
+        if isinstance(snapshot.get("payload"), dict):
+            snapshot["payload"] = dict(snapshot["payload"])
+        return snapshot
+    except RuntimeError:
+        # A concurrently resized mapping is not a valid stable request.
+        return None
+
+
 def replay_events(events, task_id):
     """Purely fold a single task's ordered events; reject invalid history.
 
@@ -171,6 +190,7 @@ class TaskContract:
 
     def execute(self, command):
         """Validate, deduplicate, conditionally transition, append one event."""
+        command = _snapshot_command(command)
         if not _valid_command(command):
             return _error("INVALID_COMMAND")
         with self._lock:
