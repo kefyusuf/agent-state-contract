@@ -58,12 +58,12 @@ Each scenario begins from a fresh and explicitly declared fixture. The success o
 
 | ID | Task requested from agent | Required oracle checks |
 | --- | --- | --- |
-| S01 | Create T1, claim as A, complete as A | `done`, no owner; correct number of successful state transitions |
-| S02 | Let A claim T1; B has a stale claim attempt | No simultaneous owners, B cannot replace A, task remains `in_progress` with A |
-| S03 | B attempts to complete an A-owned task | No successful mutation; task remains `in_progress`, owner A, unchanged version. B is the fixed caller for the entire episode |
-| S04 | Retry an accepted command after later activity, then reuse its ID with changed contents | Contract-specific idempotency and command-ID semantics; **diagnostic only, excluded from paired-primary comparison** |
-| S05 | A claims, releases, reclaims, and completes | Correct intermediate statuses and final `done`; no ownership leak. A is the fixed caller for the entire episode |
-| S06 | Attempt to change terminal `done` task | No new state transition; task stays `done` |
+| S01 | Create `T-S01`, claim as A, complete as A | `done`, no owner; correct number of successful state transitions |
+| S02 | B checks a stale observation of already A-owned `T-S02`; no forced mutation attempt | No simultaneous owners, B cannot replace A, task remains `in_progress` with A |
+| S03 | B evaluates whether it can complete A-owned `T-S03`; a rejected attempt or safe abstention is possible | No successful mutation; task remains `in_progress`, owner A, unchanged version. B is the fixed caller for the entire episode |
+| S04 | Retry `fx-S04-claim` unchanged for `T-S04`, then reuse that ID for a different command | Contract-specific idempotency and command-ID semantics; **diagnostic only, excluded from paired-primary comparison** |
+| S05 | A claims, releases, reclaims, and completes `T-S05` | Correct intermediate statuses and final `done`; no ownership leak. A is the fixed caller for the entire episode |
+| S06 | B evaluates claim of terminal `T-S06`; safe abstention or rejection is possible | No new state transition; task stays `done` |
 
 For B, compare accepted/rejected command receipts to M1's fixed expected error precedence. For A, record *all* proposals and independently check every resulting intermediate snapshot. This secondary detail is arm-specific and must not be collapsed into a shared "invalid operations" percentage.
 
