@@ -15,7 +15,7 @@ The contract implementation is **not** the scoring oracle. Fixed expectations be
 ### Actor and interface restrictions
 
 - `agent-a` and `agent-b` are **synthetic actor labels**, not authenticated accounts or independently running AI agents.
-- Each episode is **one isolated agent session** with potentially several tool calls and **one fixed synthetic caller identity** assigned by the harness. The model cannot choose or change its trusted identity. S03 uses B throughout; S05 uses A throughout. Cross-agent ownership handoff is already checked by M2 unit tests and is not required by this exploratory benchmark.
+- Each episode is **one isolated agent session** with potentially several tool calls and **one fixed synthetic caller identity** assigned by the harness. The model cannot choose or change its trusted identity. The harness must overwrite or reject any conflicting model-supplied `actor_id` *before* a contract command reaches `execute()`; baseline edit traces must carry the same host-assigned identity. S03 uses B throughout; S05 uses A throughout. Cross-agent handoff is already checked by M2 unit tests.
 - Both arms receive the **same domain rules, user goal, and visible state fields**: `task_id`, `title`, `status`, `owner_agent_id`, `version`.
 - Arm A proposes entire replacement snapshots without enforcing transitions; each proposal and actor context is logged. Arm B calls only the four M1 commands and `task.get`. Neither arm gets extra help from the evaluator.
 - The baseline must not silently validate or reject malformed state changes; it must expose them to an independent *post-hoc* trajectory oracle. Do not mistake oracle failure for a tool rejection.
@@ -145,8 +145,12 @@ A reviewer must independently verify these expected states and feasibility of fa
 - [ ] Confirm the harness pins one trusted synthetic actor per episode (S03=B; S05=A) and does not expose caller identity mutation to the model.
 - [ ] Confirm S04 runs **only** in the contract arm; exclude it from the paired-primary analysis.
 - [ ] Finalize the exact agent prompt template and tool descriptions **with identical non-interface instructions**.
+- [ ] Isolate the answer-key JSON, scoring logic, seed event logs, prior runs, test sources, and repo/web lookup from the evaluated agent. Restrict tools to the arm-specific state interface; confirm the agent cannot retrieve oracle values.
+- [ ] Verify forged model-provided `actor_id` never becomes trusted caller identity in either arm; perform the negative preflight **outside** measured episodes.
 - [ ] Freeze the scenario manifest, independent oracle expectations, run order, model/version, budgets, and hashes before launching any episode.
 - [ ] Obtain independent approval of the pre-registration and oracle rules.
 - [ ] Implement only a minimal instrumented harness after a separate design review.
+
+**Public-reference caveat:** The proposed JSON oracle is visible in this public GitHub repository for transparency. A later experiment must place the evaluator and oracle outside the agent's accessible context and disallow repo/web access; a hidden prompt attachment alone does not ensure isolation.
 
 **No experimental runs, metrics, model invocation, extra production features, or benchmark conclusions are authorized by this draft.**
