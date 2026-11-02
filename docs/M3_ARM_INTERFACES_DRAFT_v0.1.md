@@ -58,10 +58,10 @@ Both arms expose exactly one task-read operation. Exposing `TaskContract.events`
 | ID | Caller | Identical task goal for both arms |
 | --- | --- | --- |
 | S01 | `agent-a` | Create task `T-S01` with title `Task S01`. Claim it and complete it without skipping a lifecycle state. |
-| S02 | `agent-b` | An earlier observation of `T-S02` showed `todo`, no owner, version 1. It may be stale. Inspect current authoritative state and do not replace another owner's claim. Report whether you can legally claim it. |
-| S03 | `agent-b` | Check whether you may complete `T-S03`. Preserve ownership rules; if completion is not permitted, leave state unchanged and report that. |
+| S02 | `agent-b` | An earlier observation of `T-S02` showed `todo`, no owner, version 1. It may be stale. **Use `task_get`** to inspect current authoritative state and do not replace another owner's claim. Report whether you can legally claim it and why. |
+| S03 | `agent-b` | **Use `task_get`** to check whether you may complete `T-S03`. Preserve ownership rules; if completion is not permitted, leave state unchanged and explain why. |
 | S05 | `agent-a` | Claim `T-S05`, release it, claim it again, and complete it. Preserve all intermediate lifecycle states. |
-| S06 | `agent-b` | Determine whether `T-S06` can be claimed. Do not change terminal tasks. Report the legal outcome. |
+| S06 | `agent-b` | **Use `task_get`** to determine whether `T-S06` can be claimed. Do not change terminal tasks. Report the legal outcome and why. |
 
 For S01, no pre-existing task is exposed. For S02, the earlier observation is **explicitly historical**, not a guaranteed live snapshot. For S03/S05/S06, do **not** provide an oracle snapshot in the task goal: the model must use `task_get` to learn current state. Each arm receives the same initial fixture created outside the episode.
 
@@ -82,8 +82,10 @@ The precise tool schemas and prompts above are **candidates**. An independent re
 3. The contract adapter injects actor identity from the host, not from the model; its other fields stay exactly within M1.
 4. Both arms have only task-state tools. The oracle, GitHub, tests, source files, previous trials, scorer, and arbitrary environment reads are unreachable, even though the reference files are public.
 5. `S02` historical observation is conveyed identically and is clearly labeled stale-able; S03/S06 do not force a rejected operation merely to score success.
-6. No scoring information, feedback about correctness, or case-specific oracle snapshots appear in a model prompt or tool description.
+6. No scoring information, feedback about correctness, or case-specific oracle snapshots appear in a model prompt or tool description. The same requirement to check current state (S02/S03/S06) is included verbatim in both arms, rather than silently enforced after the fact.
 7. Wrapper/tool verbosity and tokens are recorded. Do not pretend different interface descriptions have identical token costs.
 8. Fixed prompt/manifest/tool schema hashes and model/version are recorded **after review** and before execution. Do not freeze or start runs while M2 PR #1 remains open.
+
+**Measurement limit:** No repository/file/search tools are available. Count state reads but do not claim reductions in architecture rediscovery. For no-mutation S02/S03/S06 tasks, require at least one successful current-state read and a correct final explanation in **both** arms. Otherwise an unchanged task is insufficient evidence of task completion.
 
 **No new product API, framework, persistence, orchestration, shell access, benchmark runner, or empirical result is authorized by this draft.**
