@@ -6,6 +6,7 @@
 **M2 baseline:** `PROJECT_BASELINE_v0.1.md`; Task Lifecycle v0.1 only.
 **Change policy:** This document is an experimental design, not an expansion of the runtime contract.
 **Candidate fixtures and oracle:** [`M3_SCENARIO_MANIFEST_DRAFT_v0.1.md`](M3_SCENARIO_MANIFEST_DRAFT_v0.1.md) — proposed only, not yet frozen.
+**Machine-readable expected outcomes:** [`M3_ORACLE_VECTORS_DRAFT_v0.1.json`](M3_ORACLE_VECTORS_DRAFT_v0.1.json) — hidden from evaluated agents; manually derived fixed reference trajectories and conditional receipts, subject to independent audit.
 
 ## 1. Question and falsifiable claims
 
