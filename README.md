@@ -24,13 +24,13 @@ No database, framework, network server, authentication, LLM, MCP, Redux, workflo
 
 ## Requirements and tests
 
-Python 3.10+; standard library only. Verified locally using Python 3.13.5.
+Python 3.10+; standard library only. The latest published GitHub Actions run ([#41405814008](https://github.com/kefyusuf/agent-state-contract/actions/runs/41405814008)) passed **31 tests** on both Python 3.10 and 3.13. Local RED/GREEN evidence predates the latest GitHub run.
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The regression and acceptance tests include the 14-step canonical scenario, fixed expected snapshots independent of replay, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, controlled two-thread collisions, and 300 deterministic mixed command attempts.
+The regression and acceptance tests include the 14-step canonical scenario, fixed expected snapshots independent of replay, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, controlled two-thread collisions, mutable caller-owned command snapshot regressions (post-validation changes cannot alter accepted operations), and 300 deterministic mixed command attempts.
 
 ## Example
 
@@ -72,7 +72,9 @@ agent-state-contract/
 ├── PROJECT_BASELINE_v0.1.md              # M0/M1 canonical contract
 ├── README.md
 ├── agent_state_contract.py               # M2 reference implementation
-├── tests/test_contract.py                # Acceptance and regression tests
+├── tests/test_contract.py                # Baseline acceptance tests
+├── tests/test_contract_review.py         # Fixed independent-oracle cases
+├── tests/test_command_input_snapshot.py  # Caller-owned input regressions
 └── docs/M2_VERIFICATION.md               # Verification evidence and gate
 ```
 
