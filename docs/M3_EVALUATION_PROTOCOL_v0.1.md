@@ -7,6 +7,7 @@
 **Change policy:** This document is an experimental design, not an expansion of the runtime contract.
 **Candidate fixtures and oracle:** [`M3_SCENARIO_MANIFEST_DRAFT_v0.1.md`](M3_SCENARIO_MANIFEST_DRAFT_v0.1.md) — proposed only, not yet frozen.
 **Machine-readable expected outcomes:** [`M3_ORACLE_VECTORS_DRAFT_v0.1.json`](M3_ORACLE_VECTORS_DRAFT_v0.1.json) — public for reviewer inspection, but **must be inaccessible to evaluated agents during episodes**. This requires explicit tool/file/network isolation; merely withholding a file from the prompt is insufficient. Expected values require independent audit.
+**Agent-facing interface and prompt candidates:** [`M3_ARM_INTERFACES_DRAFT_v0.1.md`](M3_ARM_INTERFACES_DRAFT_v0.1.md) — paired goal texts, minimal tool surfaces, and host-controlled identity. Draft; not frozen or executable.
 
 ## 1. Question and falsifiable claims
 
