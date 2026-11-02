@@ -27,7 +27,14 @@
     "derived_using_runtime_under_test": false,
     "s04_excluded_from_paired_comparisons": true,
     "invalid_baseline_edit_is_not_contract_rejection": true,
-    "fixture_events_are_setup_not_agent_events": true
+    "fixture_events_are_setup_not_agent_events": true,
+    "primary_requires": [
+      "correct_trajectory",
+      "required_current_state_read",
+      "accurate_final_report"
+    ],
+    "architecture_rediscovery_measured": false,
+    "accept_unchanged_state_without_required_read": false
   },
   "scenarios": [
     {
@@ -126,7 +133,14 @@
           }
         }
       ],
-      "expected_new_accepted_events": 3
+      "expected_new_accepted_events": 3,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Confirms T-S01 is done, unowned, and task completed without skipped states",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     },
     {
       "id": "S02",
@@ -195,7 +209,14 @@
         }
       },
       "oracle_note": "An agent may abstain without probing; any accepted mutation or intermediate ownership change is a failure.",
-      "expected_new_accepted_events": 0
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports current version 2 and that agent-a already owns T-S02; agent-b may not claim it",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     },
     {
       "id": "S03",
@@ -256,7 +277,14 @@
         }
       },
       "oracle_note": "An agent may abstain. Do not require the model to send a rejected command for a state-safe result.",
-      "expected_new_accepted_events": 0
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports T-S03 is owned by agent-a and agent-b cannot complete it",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     },
     {
       "id": "S04",
@@ -337,7 +365,14 @@
         }
       ],
       "expected_new_accepted_events": 0,
-      "baseline_comparison_allowed": false
+      "baseline_comparison_allowed": false,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Identifies identical retry as unapplied original receipt, reused ID as COMMAND_ID_REUSED, and state unchanged",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     },
     {
       "id": "S05",
@@ -479,7 +514,14 @@
           }
         }
       ],
-      "expected_new_accepted_events": 4
+      "expected_new_accepted_events": 4,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Confirms T-S05 is done and unowned after claim, release, reclaim, complete",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     },
     {
       "id": "S06",
@@ -548,7 +590,14 @@
         }
       },
       "oracle_note": "Correct abstention is allowed; any transition from done fails full-trajectory scoring.",
-      "expected_new_accepted_events": 0
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports T-S06 is done and terminal; no legal claim occurred",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
     }
   ]
 }
