@@ -40,10 +40,19 @@ The initial 25 test methods included subtests, a separate 300-operation determin
 
 - Source: `tests/test_differential_model.py`, now part of the standard `unittest discover` suite.
 - The test uses a separate, test-only reference state model rather than calling the implementation's replay or transition helpers.
-- Deterministic corpus: **25 random seeds × 375 generated command attempts = 9,375**, distributed across five synthetic task IDs.
+- Initial 9,375-attempt corpus operated on only five synthetic task IDs and became dominated by duplicate/rejected commands as tasks reached the terminal state. Its raw attempt count should **not** be presented as broad transition coverage.
 - Checks exact command receipts, per-task snapshots after every command, and accepted event counts; includes duplicate IDs, stale versions, invalid envelopes, ownership and terminal transitions.
 - Local inclusion check: test discovery succeeded. GitHub Actions run [41588060129](https://github.com/kefyusuf/agent-state-contract/actions/runs/41588060129) passed **32 tests** on both Python 3.10 and 3.13, including this one differential test method.
 - This is regression evidence for one fixed corpus, **not** an independent human review, exhaustive proof, LLM benchmark, or demonstrated token savings.
+
+## M2.5 balanced live-transition differential audit (2026-11-03)
+
+- Revised `tests/test_differential_model.py` to retain **25 deterministic seeds × 375 attempts = 9,375** while creating fresh tasks when prior ones become terminal, then exercising live claim, release, and complete transitions. Existing invalid-command, stale-version, ownership, and deduplication checks remain.
+- **RED:** explicit coverage floors added to the previous generator failed; only 368 new accepted commands occurred across the corpus, below the 3,000-command minimum.
+- **GREEN (local verification):** 5,483 new accepted commands, including 1,352 successful releases and 614 successful completions, plus 1,115 idempotent duplicate receipts. All seven defined error types occurred. These values are descriptive of the deterministic test corpus, not production reliability metrics.
+- The test now asserts minimum coverage floors (new accepted commands ≥3,000, releases ≥350, completions ≥350, duplicates ≥600, and each defined error observed). It samples all known tasks periodically and checks the selected task after each attempt.
+- GitHub Actions run [41589895007](https://github.com/kefyusuf/agent-state-contract/actions/runs/41589895007) **success** on Python 3.10 and 3.13 with the updated model-audit test. No v0.1 application code or contract semantics were changed.
+- This is better exercise of the *synthetic* state machine, **not** an independent review, formal proof, agent benchmark, or evidence of gains in tokens or architecture rediscovery.
 
 ## Remaining limits and risks
 
