@@ -36,6 +36,15 @@ The initial 25 test methods included subtests, a separate 300-operation determin
 - Replay of well-formed histories and rejection of invalid histories: **satisfied by tests**.
 - State and event snapshots cannot be altered by modifying returned dictionaries: **satisfied by tests**.
 
+## M2.4 deterministic differential-model audit (2026-11-03)
+
+- Source: `tests/test_differential_model.py`, now part of the standard `unittest discover` suite.
+- The test uses a separate, test-only reference state model rather than calling the implementation's replay or transition helpers.
+- Deterministic corpus: **25 random seeds × 375 generated command attempts = 9,375**, distributed across five synthetic task IDs.
+- Checks exact command receipts, per-task snapshots after every command, and accepted event counts; includes duplicate IDs, stale versions, invalid envelopes, ownership and terminal transitions.
+- Local inclusion check: test discovery succeeded. GitHub Actions run [41588060129](https://github.com/kefyusuf/agent-state-contract/actions/runs/41588060129) passed **32 tests** on both Python 3.10 and 3.13, including this one differential test method.
+- This is regression evidence for one fixed corpus, **not** an independent human review, exhaustive proof, LLM benchmark, or demonstrated token savings.
+
 ## Remaining limits and risks
 
 - No external agent, LLM, or provider was invoked. The actor identity is test-supplied and must be injected by a trusted adapter in any future integration.
@@ -44,7 +53,7 @@ The initial 25 test methods included subtests, a separate 300-operation determin
 - Unit tests are evidence only for the tested scenarios, not formal verification or universal absence of failures.
 - The research hypothesis about token use, architecture rediscovery and real agent reliability has **not been tested**.
 
-## Repository and release gate (updated 2026-11-02)
+## Repository and release gate (updated 2026-11-03)
 
 - Repository: https://github.com/kefyusuf/agent-state-contract
 - Branch: `feat/m2-task-contract`
@@ -53,6 +62,7 @@ The initial 25 test methods included subtests, a separate 300-operation determin
 - Initial GitHub Actions run `41351574644`: **success**, 25 tests on Python 3.10 and 3.13.
 - M2.1 verification run `41353287871`: **success**, 29 tests on Python 3.10 and 3.13.
 - M2.2 verification run [`41405814008`](https://github.com/kefyusuf/agent-state-contract/actions/runs/41405814008): **success**, **31 tests** on Python 3.10 and 3.13; commit `e2cae3de001c0beb6dd1c9fde36a1da40c055858`.
+- M2.4 differential audit run [`41588060129`](https://github.com/kefyusuf/agent-state-contract/actions/runs/41588060129): **success**, **32 tests** on both Python versions; test integration commit `ed5525df8a4a8aaa371ae73e2c4e9c79f08c2740`.
 - Review gate: **pending**. GitHub has no independent submitted approval; do not merge until reviewed.
 - Fixed-oracle, concurrent global-ID, and mutable caller-command input regressions are included. The latest successful CI run is the authoritative reproducible evidence for this branch.
 
