@@ -4,6 +4,7 @@ The model is test-only and does not call the implementation's transition or
 replay helpers. It is not an independent human review or a formal proof.
 """
 
+from collections import Counter
 from copy import deepcopy
 import random
 import unittest
@@ -59,41 +60,82 @@ class Model:
 class DifferentialModelTests(unittest.TestCase):
     def test_25_seed_differential_audit(self):
         cases=0
+        coverage=Counter()
         for seed in range(25):
             rng=random.Random(seed*1847+42)
-            model=Model();implementation=TaskContract();accepted=[];rejected=[]
+            model=Model();implementation=TaskContract();accepted=[]
             for i in range(375):
-                task=rng.choice(['t1','t2','t3','t4','t5'])
-                actor=rng.choice(['agent-a','agent-b','agent-c'])
-                typ=rng.choice(tuple(TYPES))
-                version=model.states.get(task,{}).get('version',1)
-                version=rng.choice([version,version,version+1,max(1,version-1),0,True,'1',None])
+                # Keep live tasks in play: a static set becomes terminal quickly,
+                # leaving almost every later command as a rejection or duplicate.
                 cmdid=f's{seed}-c{i}'
-                if accepted and rng.random()<0.19:
+                roll=rng.random()
+                live=[state for state in model.states.values() if state['status']!='done']
+                if roll < 0.57:
+                    if not live or rng.random() < 0.24:
+                        c={'command_id':cmdid,'actor_id':rng.choice(['agent-a','agent-b','agent-c']),
+                           'task_id':f'new-{seed}-{i}','type':'task.create',
+                           'payload':{'title':f'Task {seed}-{i}'}}
+                    else:
+                        state=rng.choice(live)
+                        if state['status']=='todo':
+                            kind='task.claim'
+                            actor=rng.choice(['agent-a','agent-b','agent-c'])
+                        else:
+                            kind=rng.choice(['task.release','task.release','task.complete'])
+                            actor=state['owner_agent_id']
+                        c={'command_id':cmdid,'actor_id':actor,'task_id':state['task_id'],
+                           'type':kind,'expected_version':state['version'],'payload':{}}
+                elif roll < 0.69 and accepted:
                     c=deepcopy(rng.choice(accepted))
-                elif accepted and rng.random()<0.15:
+                elif roll < 0.80 and accepted:
                     c=deepcopy(rng.choice(accepted))
-                    c[rng.choice(['actor_id','task_id','type'])]=rng.choice(['agent-z','tX','task.release'])
-                elif rejected and rng.random()<0.08:
-                    c=deepcopy(rng.choice(rejected));c['command_id']=cmdid
+                    c['actor_id']='different-actor'
+                elif roll < 0.96:
+                    if model.states:
+                        state=rng.choice(list(model.states.values()))
+                        typ=rng.choice(['task.claim','task.release','task.complete','task.create'])
+                        c={'command_id':cmdid,'actor_id':rng.choice(['agent-a','agent-b','agent-c']),
+                           'task_id':state['task_id'],'type':typ,
+                           'payload':{'title':'Duplicate title'} if typ=='task.create' else {}}
+                        if typ!='task.create':
+                            c['expected_version']=rng.choice([state['version'],max(1,state['version']-1),
+                                                              state['version']+1])
+                    else:
+                        c={'command_id':cmdid,'actor_id':'agent-a',
+                           'task_id':'not-found','type':'task.claim',
+                           'expected_version':1,'payload':{}}
                 else:
-                    c={'command_id':cmdid,'actor_id':actor,'task_id':task,'type':typ,
-                    'payload':{'title':rng.choice(['Title','  whitespace  ',''])} if typ=='task.create' else {},}
-                    if typ!='task.create':c['expected_version']=version
-                    if rng.random()<0.05:c['unexpected']=1
-                before=len(model.events)
+                    c={'command_id':cmdid,'actor_id':'agent-a','task_id':'malformed',
+                       'type':'task.claim','expected_version':True,'payload':{}}
                 expected=model.execute(c)
                 observed=implementation.execute(deepcopy(c))
                 if observed!=expected:raise AssertionError(f'case {seed}:{i}: {c}\nexpected {expected}\nobserved {observed}')
-                if expected['ok'] and expected['applied']:accepted.append(c)
-                else:rejected.append(c)
+                if expected['ok'] and expected['applied']:
+                    coverage['applied'] += 1
+                    coverage[c['type']] += 1
+                    accepted.append(deepcopy(c))
+                elif expected['ok']:
+                    coverage['duplicate'] += 1
+                else:
+                    coverage[expected['code']] += 1
                 if len(implementation.events)!=len(model.events):raise AssertionError('unexpected events')
-                for t in ('t1','t2','t3','t4','t5'):
+                # Check the changed task every time; inspect every task
+                # periodically so an unrelated mutation cannot be missed.
+                checked=list(model.states) if i%25==0 else [c['task_id']]
+                checked.append('unseen-task')
+                for t in checked:
                     result=implementation.get(t)
                     expectation=({'ok':True,'task':model.states[t]} if t in model.states else {'ok':False,'code':'TASK_NOT_FOUND'})
                     if result!=expectation:raise AssertionError((seed,i,t,result,expectation))
                 cases+=1
         self.assertEqual(cases, 9_375)
+        self.assertGreaterEqual(coverage['applied'], 3_000, coverage)
+        self.assertGreaterEqual(coverage['task.release'], 350, coverage)
+        self.assertGreaterEqual(coverage['task.complete'], 350, coverage)
+        self.assertGreaterEqual(coverage['duplicate'], 600, coverage)
+        for error in ('INVALID_COMMAND','COMMAND_ID_REUSED','VERSION_CONFLICT',
+                      'INVALID_TRANSITION','NOT_OWNER','TASK_ALREADY_EXISTS','TASK_NOT_FOUND'):
+            self.assertGreater(coverage[error], 0, (error, coverage))
 
 
 if __name__ == "__main__":
