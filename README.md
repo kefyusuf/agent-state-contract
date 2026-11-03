@@ -24,13 +24,13 @@ No database, framework, network server, authentication, LLM, MCP, Redux, workflo
 
 ## Requirements and tests
 
-Python 3.10+; standard library only. The latest published GitHub Actions run ([#41588060129](https://github.com/kefyusuf/agent-state-contract/actions/runs/41588060129)) passed **32 tests** on both Python 3.10 and 3.13. Local RED/GREEN evidence predates the latest GitHub run.
+Python 3.10+; standard library only. The current differential-test code passed GitHub Actions ([#41589895007](https://github.com/kefyusuf/agent-state-contract/actions/runs/41589895007)) with **32 tests** on both Python 3.10 and 3.13. Local RED/GREEN evidence predates the latest GitHub run.
 
 ```bash
 python -m unittest discover -s tests -v
 ```
 
-The regression and acceptance tests include the 14-step canonical scenario, fixed expected snapshots independent of replay, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, controlled two-thread collisions, mutable caller-owned command snapshot regressions, **9,375 deterministic differential-model command attempts across 25 seeds**, and 300 deterministic mixed command attempts.
+The regression and acceptance tests include the 14-step canonical scenario, fixed expected snapshots independent of replay, malformed envelopes/events, ownership, stale commands, duplicate IDs, replay consistency, independent per-task versioning, controlled two-thread collisions, mutable caller-owned command snapshot regressions, **9,375 deterministic differential-model command attempts across 25 seeds** (with minimum live-transition coverage checks), and 300 deterministic mixed command attempts.
 
 ## Example
 
