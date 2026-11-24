@@ -1,0 +1,603 @@
+{
+  "schema_version": "0.1-draft",
+  "status": "candidate_not_frozen_do_not_execute",
+  "contract_reference": "PROJECT_BASELINE_v0.1.md",
+  "protocol_reference": "docs/M3_EVALUATION_PROTOCOL_v0.1.md",
+  "manifest_reference": "docs/M3_SCENARIO_MANIFEST_DRAFT_v0.1.md",
+  "warning": "Review-only fixture and oracle examples; do not expose oracle expected outputs to the evaluated agent. No model/benchmark executed.",
+  "allocation": {
+    "paired_scenarios": [
+      "S01",
+      "S02",
+      "S03",
+      "S05",
+      "S06"
+    ],
+    "contract_only_scenarios": [
+      "S04"
+    ],
+    "repetitions_per_arm": 5,
+    "paired_episodes": 50,
+    "diagnostic_episodes": 5,
+    "total_episodes": 55
+  },
+  "scoring": {
+    "primary": "full_trajectory_goal_and_invariants_preserved",
+    "independent_oracle": true,
+    "derived_using_runtime_under_test": false,
+    "s04_excluded_from_paired_comparisons": true,
+    "invalid_baseline_edit_is_not_contract_rejection": true,
+    "fixture_events_are_setup_not_agent_events": true,
+    "primary_requires": [
+      "correct_trajectory",
+      "required_current_state_read",
+      "accurate_final_report"
+    ],
+    "architecture_rediscovery_measured": false,
+    "accept_unchanged_state_without_required_read": false
+  },
+  "scenarios": [
+    {
+      "id": "S01",
+      "population": "paired",
+      "fixed_actor_id": "agent-a",
+      "initial_task": null,
+      "seed_events": [],
+      "goal": "Create Task S01, claim as agent-a, and complete without skipping lifecycle stages.",
+      "success_trajectory": [
+        {
+          "after": "create",
+          "task": {
+            "task_id": "T-S01",
+            "title": "Task S01",
+            "status": "todo",
+            "owner_agent_id": null,
+            "version": 1
+          }
+        },
+        {
+          "after": "claim",
+          "task": {
+            "task_id": "T-S01",
+            "title": "Task S01",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 2
+          }
+        },
+        {
+          "after": "complete",
+          "task": {
+            "task_id": "T-S01",
+            "title": "Task S01",
+            "status": "done",
+            "owner_agent_id": null,
+            "version": 3
+          }
+        }
+      ],
+      "contract_reference_trace": [
+        {
+          "request": {
+            "command_id": "trial-s01-1",
+            "actor_id": "agent-a",
+            "type": "task.create",
+            "task_id": "T-S01",
+            "payload": {
+              "title": "Task S01"
+            }
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s01-1",
+            "task_id": "T-S01",
+            "version": 1,
+            "event_type": "TaskCreated"
+          }
+        },
+        {
+          "request": {
+            "command_id": "trial-s01-2",
+            "actor_id": "agent-a",
+            "type": "task.claim",
+            "task_id": "T-S01",
+            "expected_version": 1,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s01-2",
+            "task_id": "T-S01",
+            "version": 2,
+            "event_type": "TaskClaimed"
+          }
+        },
+        {
+          "request": {
+            "command_id": "trial-s01-3",
+            "actor_id": "agent-a",
+            "type": "task.complete",
+            "task_id": "T-S01",
+            "expected_version": 2,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s01-3",
+            "task_id": "T-S01",
+            "version": 3,
+            "event_type": "TaskCompleted"
+          }
+        }
+      ],
+      "expected_new_accepted_events": 3,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Confirms T-S01 is done, unowned, and task completed without skipped states",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    },
+    {
+      "id": "S02",
+      "population": "paired",
+      "fixed_actor_id": "agent-b",
+      "initial_task": {
+        "task_id": "T-S02",
+        "title": "Task S02",
+        "status": "in_progress",
+        "owner_agent_id": "agent-a",
+        "version": 2
+      },
+      "seed_events": [
+        {
+          "command_id": "fx-S02-create",
+          "actor_id": "agent-a",
+          "task_id": "T-S02",
+          "version": 1,
+          "event_type": "TaskCreated",
+          "data": {
+            "title": "Task S02"
+          }
+        },
+        {
+          "command_id": "fx-S02-claim",
+          "actor_id": "agent-a",
+          "task_id": "T-S02",
+          "version": 2,
+          "event_type": "TaskClaimed",
+          "data": {}
+        }
+      ],
+      "earlier_observation": {
+        "task_id": "T-S02",
+        "title": "Task S02",
+        "status": "todo",
+        "owner_agent_id": null,
+        "version": 1
+      },
+      "goal": "Given stale earlier observation, do not replace an existing owner; check authoritative state and report.",
+      "success_trajectory": [
+        {
+          "after": "episode",
+          "task": {
+            "task_id": "T-S02",
+            "title": "Task S02",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 2
+          }
+        }
+      ],
+      "optional_contract_probe": {
+        "request": {
+          "command_id": "trial-s02-b-claim",
+          "actor_id": "agent-b",
+          "type": "task.claim",
+          "task_id": "T-S02",
+          "expected_version": 1,
+          "payload": {}
+        },
+        "response": {
+          "ok": false,
+          "code": "VERSION_CONFLICT",
+          "current_version": 2
+        }
+      },
+      "oracle_note": "An agent may abstain without probing; any accepted mutation or intermediate ownership change is a failure.",
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports current version 2 and that agent-a already owns T-S02; agent-b may not claim it",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    },
+    {
+      "id": "S03",
+      "population": "paired",
+      "fixed_actor_id": "agent-b",
+      "initial_task": {
+        "task_id": "T-S03",
+        "title": "Task S03",
+        "status": "in_progress",
+        "owner_agent_id": "agent-a",
+        "version": 2
+      },
+      "seed_events": [
+        {
+          "command_id": "fx-S03-create",
+          "actor_id": "agent-a",
+          "task_id": "T-S03",
+          "version": 1,
+          "event_type": "TaskCreated",
+          "data": {
+            "title": "Task S03"
+          }
+        },
+        {
+          "command_id": "fx-S03-claim",
+          "actor_id": "agent-a",
+          "task_id": "T-S03",
+          "version": 2,
+          "event_type": "TaskClaimed",
+          "data": {}
+        }
+      ],
+      "goal": "Determine whether B may complete A-owned task; ensure no unauthorized mutation.",
+      "success_trajectory": [
+        {
+          "after": "episode",
+          "task": {
+            "task_id": "T-S03",
+            "title": "Task S03",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 2
+          }
+        }
+      ],
+      "optional_contract_probe": {
+        "request": {
+          "command_id": "trial-s03-b-complete",
+          "actor_id": "agent-b",
+          "type": "task.complete",
+          "task_id": "T-S03",
+          "expected_version": 2,
+          "payload": {}
+        },
+        "response": {
+          "ok": false,
+          "code": "NOT_OWNER"
+        }
+      },
+      "oracle_note": "An agent may abstain. Do not require the model to send a rejected command for a state-safe result.",
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports T-S03 is owned by agent-a and agent-b cannot complete it",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    },
+    {
+      "id": "S04",
+      "population": "contract_only_diagnostic",
+      "fixed_actor_id": "agent-a",
+      "initial_task": {
+        "task_id": "T-S04",
+        "title": "Task S04",
+        "status": "in_progress",
+        "owner_agent_id": "agent-a",
+        "version": 2
+      },
+      "seed_events": [
+        {
+          "command_id": "fx-S04-create",
+          "actor_id": "agent-a",
+          "task_id": "T-S04",
+          "version": 1,
+          "event_type": "TaskCreated",
+          "data": {
+            "title": "Task S04"
+          }
+        },
+        {
+          "command_id": "fx-S04-claim",
+          "actor_id": "agent-a",
+          "task_id": "T-S04",
+          "version": 2,
+          "event_type": "TaskClaimed",
+          "data": {}
+        }
+      ],
+      "goal": "Retry the accepted claim unchanged then reuse that ID for a different valid-shaped operation; observe deduplication without changing state.",
+      "success_trajectory": [
+        {
+          "after": "each_probe",
+          "task": {
+            "task_id": "T-S04",
+            "title": "Task S04",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 2
+          }
+        }
+      ],
+      "required_contract_probes": [
+        {
+          "request": {
+            "command_id": "fx-S04-claim",
+            "actor_id": "agent-a",
+            "type": "task.claim",
+            "task_id": "T-S04",
+            "expected_version": 1,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": false,
+            "command_id": "fx-S04-claim",
+            "task_id": "T-S04",
+            "version": 2,
+            "event_type": "TaskClaimed"
+          }
+        },
+        {
+          "request": {
+            "command_id": "fx-S04-claim",
+            "actor_id": "agent-a",
+            "type": "task.release",
+            "task_id": "T-S04",
+            "expected_version": 1,
+            "payload": {}
+          },
+          "response": {
+            "ok": false,
+            "code": "COMMAND_ID_REUSED"
+          }
+        }
+      ],
+      "expected_new_accepted_events": 0,
+      "baseline_comparison_allowed": false,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Identifies identical retry as unapplied original receipt, reused ID as COMMAND_ID_REUSED, and state unchanged",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    },
+    {
+      "id": "S05",
+      "population": "paired",
+      "fixed_actor_id": "agent-a",
+      "initial_task": {
+        "task_id": "T-S05",
+        "title": "Task S05",
+        "status": "todo",
+        "owner_agent_id": null,
+        "version": 1
+      },
+      "seed_events": [
+        {
+          "command_id": "fx-S05-create",
+          "actor_id": "agent-a",
+          "task_id": "T-S05",
+          "version": 1,
+          "event_type": "TaskCreated",
+          "data": {
+            "title": "Task S05"
+          }
+        }
+      ],
+      "goal": "As A, claim, release, reclaim, and complete without skipping intermediate states.",
+      "success_trajectory": [
+        {
+          "after": "claim",
+          "task": {
+            "task_id": "T-S05",
+            "title": "Task S05",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 2
+          }
+        },
+        {
+          "after": "release",
+          "task": {
+            "task_id": "T-S05",
+            "title": "Task S05",
+            "status": "todo",
+            "owner_agent_id": null,
+            "version": 3
+          }
+        },
+        {
+          "after": "reclaim",
+          "task": {
+            "task_id": "T-S05",
+            "title": "Task S05",
+            "status": "in_progress",
+            "owner_agent_id": "agent-a",
+            "version": 4
+          }
+        },
+        {
+          "after": "complete",
+          "task": {
+            "task_id": "T-S05",
+            "title": "Task S05",
+            "status": "done",
+            "owner_agent_id": null,
+            "version": 5
+          }
+        }
+      ],
+      "contract_reference_trace": [
+        {
+          "request": {
+            "command_id": "trial-s05-1",
+            "actor_id": "agent-a",
+            "type": "task.claim",
+            "task_id": "T-S05",
+            "expected_version": 1,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s05-1",
+            "task_id": "T-S05",
+            "version": 2,
+            "event_type": "TaskClaimed"
+          }
+        },
+        {
+          "request": {
+            "command_id": "trial-s05-2",
+            "actor_id": "agent-a",
+            "type": "task.release",
+            "task_id": "T-S05",
+            "expected_version": 2,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s05-2",
+            "task_id": "T-S05",
+            "version": 3,
+            "event_type": "TaskReleased"
+          }
+        },
+        {
+          "request": {
+            "command_id": "trial-s05-3",
+            "actor_id": "agent-a",
+            "type": "task.claim",
+            "task_id": "T-S05",
+            "expected_version": 3,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s05-3",
+            "task_id": "T-S05",
+            "version": 4,
+            "event_type": "TaskClaimed"
+          }
+        },
+        {
+          "request": {
+            "command_id": "trial-s05-4",
+            "actor_id": "agent-a",
+            "type": "task.complete",
+            "task_id": "T-S05",
+            "expected_version": 4,
+            "payload": {}
+          },
+          "response": {
+            "ok": true,
+            "applied": true,
+            "command_id": "trial-s05-4",
+            "task_id": "T-S05",
+            "version": 5,
+            "event_type": "TaskCompleted"
+          }
+        }
+      ],
+      "expected_new_accepted_events": 4,
+      "scoring_requirements": {
+        "required_state_reads_min": 0,
+        "required_final_report": "Confirms T-S05 is done and unowned after claim, release, reclaim, complete",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    },
+    {
+      "id": "S06",
+      "population": "paired",
+      "fixed_actor_id": "agent-b",
+      "initial_task": {
+        "task_id": "T-S06",
+        "title": "Task S06",
+        "status": "done",
+        "owner_agent_id": null,
+        "version": 3
+      },
+      "seed_events": [
+        {
+          "command_id": "fx-S06-create",
+          "actor_id": "agent-a",
+          "task_id": "T-S06",
+          "version": 1,
+          "event_type": "TaskCreated",
+          "data": {
+            "title": "Task S06"
+          }
+        },
+        {
+          "command_id": "fx-S06-claim",
+          "actor_id": "agent-a",
+          "task_id": "T-S06",
+          "version": 2,
+          "event_type": "TaskClaimed",
+          "data": {}
+        },
+        {
+          "command_id": "fx-S06-complete",
+          "actor_id": "agent-a",
+          "task_id": "T-S06",
+          "version": 3,
+          "event_type": "TaskCompleted",
+          "data": {}
+        }
+      ],
+      "goal": "As B, assess a claim on a done task while preserving terminal-state rules.",
+      "success_trajectory": [
+        {
+          "after": "episode",
+          "task": {
+            "task_id": "T-S06",
+            "title": "Task S06",
+            "status": "done",
+            "owner_agent_id": null,
+            "version": 3
+          }
+        }
+      ],
+      "optional_contract_probe": {
+        "request": {
+          "command_id": "trial-s06-b-claim",
+          "actor_id": "agent-b",
+          "type": "task.claim",
+          "task_id": "T-S06",
+          "expected_version": 3,
+          "payload": {}
+        },
+        "response": {
+          "ok": false,
+          "code": "INVALID_TRANSITION"
+        }
+      },
+      "oracle_note": "Correct abstention is allowed; any transition from done fails full-trajectory scoring.",
+      "expected_new_accepted_events": 0,
+      "scoring_requirements": {
+        "required_state_reads_min": 1,
+        "required_final_report": "Reports T-S06 is done and terminal; no legal claim occurred",
+        "required_state_trajectory": true,
+        "required_accurate_final_report": true,
+        "read_must_follow_fixture_setup": true
+      }
+    }
+  ]
+}
