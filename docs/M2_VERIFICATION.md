@@ -72,12 +72,12 @@ The initial 25 test methods included subtests, a separate 300-operation determin
 - M2.1 verification run `41353287871`: **success**, 29 tests on Python 3.10 and 3.13.
 - M2.2 verification run [`41405814008`](https://github.com/kefyusuf/agent-state-contract/actions/runs/41405814008): **success**, **31 tests** on Python 3.10 and 3.13; commit `e2cae3de001c0beb6dd1c9fde36a1da40c055858`.
 - M2.4 differential audit run [`41588060129`](https://github.com/kefyusuf/agent-state-contract/actions/runs/41588060129): **success**, **32 tests** on both Python versions; test integration commit `ed5525df8a4a8aaa371ae73e2c4e9c79f08c2740`.
-- Review gate: **pending**. GitHub has no independent submitted approval; do not merge until reviewed.
+- Review gate: **closed by owner decision (2026-11-24)**. GitHub has no independent submitted approval; the owner explicitly authorized merge after the agent-led review recorded below.
 - Fixed-oracle, concurrent global-ID, and mutable caller-command input regressions are included. The latest successful CI run is the authoritative reproducible evidence for this branch.
 
 The original RED/GREEN output files were not committed with the reference implementation; the narrative above records the historical local workflow. The current tests and GitHub Actions runs are reproducible evidence for the published branch.
 
-## Independent review checklist (still pending)
+## Independent review checklist and owner merge decision
 
 The reviewer should examine the **latest** head commit rather than infer approval from successful tests:
 
@@ -87,6 +87,8 @@ The reviewer should examine the **latest** head commit rather than infer approva
 4. Do the new regression tests assert fixed expected state and receipts without treating `replay()` as an independent oracle?
 5. Are the omitted guarantees (durability, trusted actor authentication, distributed consistency, real-agent gains) clearly stated?
 
-**Gate:** An independent GitHub review with an approval decision and a green CI result for the reviewed head are required before merge. A review checklist or self-review comment does **not** satisfy this gate.
+**Gate (original policy):** An independent GitHub review with an approval decision and a green CI result for the reviewed head are required before merge. A review checklist or self-review comment does **not** satisfy this gate.
 
-**Next action:** Obtain independent review of PR #1 and verify CI again before merge. M3 code and execution remain out of scope until that gate closes.
+**Owner merge decision (2026-11-24):** No independent human GitHub approval was obtained. The repository owner explicitly instructed merge after an agent-led review covering: (1) spec-to-implementation conformance with `PROJECT_BASELINE_v0.1.md` (validation order, error precedence, accepted-command idempotency, ownership invariants, replay); (2) a local rerun of the exact CI invocation, `python -m unittest discover -s tests -v` on Python 3.13.15 — 32 tests passed; (3) green GitHub Actions on head `fbe151d2a8add6f64d4bfdc394ba438a01112041`. This is an owner override of the independent-review gate, recorded here so the checklist above is not mistaken for a satisfied independent review. The override applies to this M2 merge only; the M3 protocol-review and manifest-freezing gates remain in force.
+
+**Next action:** Independent review of the M3 pre-registration drafts (PR #2) and manifest freezing before any benchmark execution. M3 benchmark code and execution remain out of scope until those gates close.

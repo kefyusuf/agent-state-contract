@@ -2,7 +2,7 @@
 
 A small, provider-independent reference implementation of a **Task Lifecycle state contract** for coding-agent-accessible systems.
 
-**Status:** M2 implementation and CI verified; independent PR review pending. Not a production service.  
+**Status:** M2 implementation and CI verified; merged by explicit owner decision after an agent-led standards review (no independent human GitHub approval). Not a production service.  
 **Canonical design contract:** [`PROJECT_BASELINE_v0.1.md`](PROJECT_BASELINE_v0.1.md).
 
 ## Problem and hypothesis
@@ -83,7 +83,7 @@ agent-state-contract/
 
 - **M0:** Closed — product problem and exclusions defined.
 - **M1:** Frozen v0.1 contract — no language or framework requirements.
-- **M2:** Local RED → GREEN → regression verification and GitHub Actions (Python 3.10/3.13) completed. PR #1 remains open for independent review and merge gate.
-- **M3:** Planned evidence-backed comparison of bounded versus unconstrained agent behavior, not started while M2 review is pending. No agent integration or token-use claim in M2.
+- **M2:** Local RED → GREEN → regression verification and GitHub Actions (Python 3.10/3.13) completed. PR #1 closed by explicit owner decision on 2026-11-24 after an agent-led standards review and green CI; no independent human GitHub approval was obtained (see `docs/M2_VERIFICATION.md`).
+- **M3:** Planned evidence-backed comparison of bounded versus unconstrained agent behavior. Design drafts are pre-registered in PR #2; execution remains gated on independent protocol review and a frozen manifest. No agent integration or token-use claim in M2.
 
 Do not add infrastructure or generic extensibility in response to speculative future needs. Any contract change requires an explicit revision to the baseline and corresponding tests.
