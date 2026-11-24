@@ -3,7 +3,7 @@
 **Status:** REVIEW DRAFT — not frozen, not executable, no agent or benchmark runs.
 **Date:** 2026-11-02
 **Scope:** Task Lifecycle v0.1; companion to `M3_EVALUATION_PROTOCOL_v0.1.md` and `M3_SCENARIO_MANIFEST_DRAFT_v0.1.md`.
-**Gate:** Do not implement a harness or execute an episode until M2 PR #1 passes independent human review, CI, and merge. Then review and freeze this pack and the oracle separately.
+**Gate:** Do not implement a harness or execute an episode until M2 PR #1 passes its review gate (independent-review component closed by explicit owner decision, 2026-11-24; see `docs/M2_VERIFICATION.md`), CI, and merge. Then review and freeze this pack and the oracle separately.
 
 ## 1. Comparison contract
 

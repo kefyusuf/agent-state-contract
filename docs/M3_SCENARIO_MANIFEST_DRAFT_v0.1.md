@@ -2,7 +2,7 @@
 
 **Status:** DRAFT ONLY — not frozen, not executable authorization, no benchmark observations.
 **Date:** 2026-11-02
-**Dependency:** M2 PR #1 must pass independent review, the current CI gate, and merge before running M3.
+**Dependency:** M2 PR #1 must pass its review gate (independent-review component closed by explicit owner decision, 2026-11-24; see `docs/M2_VERIFICATION.md`), the current CI gate, and merge before running M3.
 **Companion:** `M3_EVALUATION_PROTOCOL_v0.1.md`.
 **Domain:** Task Lifecycle Contract v0.1; no additional operations.
 
@@ -141,7 +141,7 @@ A reviewer must independently verify these expected states and feasibility of fa
 
 ## 5. Controls still needed before execution
 
-- [ ] Independent M2 PR #1 review, passing CI, and merge.
+- [ ] M2 PR #1 review gate (closed by owner decision, 2026-11-24), passing CI, and merge.
 - [ ] Confirm the harness pins one trusted synthetic actor per episode (S03=B; S05=A) and does not expose caller identity mutation to the model.
 - [ ] Confirm S04 runs **only** in the contract arm; exclude it from the paired-primary analysis.
 - [ ] Finalize the exact agent prompt template and tool descriptions **with identical non-interface instructions**.

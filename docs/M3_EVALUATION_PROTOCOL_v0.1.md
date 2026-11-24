@@ -1,6 +1,7 @@
 # M3 — Controlled Evaluation Protocol v0.1
 
-**Status:** Pre-registration draft; **NOT authorized to execute** until M2 PR #1 has passed independent review, current CI, and merge gates.
+**Status:** Pre-registration draft; **NOT authorized to execute** until M2 PR #1 has passed its review, current CI, and merge gates, and this protocol has passed its own independent review and freezing gates.
+**M2 gate note (2026-11-24):** The independent-review component of the M2 gate was closed by explicit owner decision (owner override recorded in `docs/M2_VERIFICATION.md`, PR #1). Green CI and the PR #1 merge remain prerequisites for any M3 execution; this protocol's own review and freezing gates are unaffected.
 **Date:** 2026-11-02
 **Repository:** `kefyusuf/agent-state-contract`
 **M2 baseline:** `PROJECT_BASELINE_v0.1.md`; Task Lifecycle v0.1 only.
@@ -73,7 +74,7 @@ A scenario manifest must fix exact initial snapshots, actor identities, task IDs
 
 ## 5. Matched execution
 
-1. Complete the M2 independent review and merge first.
+1. Close the M2 review gate (done by owner decision, 2026-11-24) and merge PR #1 first.
 2. Freeze the M2 source SHA, scenario manifest SHA, model identifier/version, inference settings, tool descriptions, and token/time budgets.
 3. Use one agent model and the same system instructions, task goals, maximum steps, and budget across both arms. Arm-specific tool instructions may differ only to explain the available interface.
 4. Plan **55 episodes total**: five primary scenarios × five repetitions × two arms = **50 matched episodes**, plus one contract-only diagnostic scenario (S04) × five repetitions = **5 episodes**. Pair seeds only for the 50 comparable episodes where supported; otherwise report non-determinism. No baseline S04 runs are planned.
@@ -133,7 +134,7 @@ Allowed episode status values are `completed`, `timeout`, `tool_error`, and `mod
 
 ## 8. Decision rules (locked before running)
 
-- **M3 execution gate:** No run until M2 PR #1 is merged after independent review and passing CI.
+- **M3 execution gate:** No run until M2 PR #1 is merged with passing CI. The independent-review component of that gate was closed by explicit owner decision on 2026-11-24 (recorded in `docs/M2_VERIFICATION.md`); this protocol's own independent-review and freezing gates are unaffected.
 - **Protocol integrity gate:** Both arms share the task rubric and have complete, independently checked oracle fixtures and a frozen manifest; each episode has exactly one fixed trusted synthetic caller identity supplied by its harness, never by a model's asserted identity; S04 is contract-only and non-comparable. If these conditions are not met, stop and revise the protocol **before** collecting outcomes.
 - **Safety gate:** Contract arm must exhibit zero *accepted* state invariant violations across test and benchmark runs. Any such failure is a defect investigation, not a reason to discard the episode.
 - **Evidence gate:** Report completion rate alongside token, time, and exploration costs. A guardrail-only gain must not be described as a gain in agent reasoning or token efficiency.
@@ -145,7 +146,7 @@ No percentage improvement, speed-up, token reduction, or cross-language portabil
 
 Deferred, not approved: external agents or provider SDKs, CLI benchmark runner, new APIs/adapters, model comparisons, cross-language ports, production state storage, additional workflow domains, optimization of event scanning, and packaging.
 
-**Next approved action:** independent review/merge of M2 PR #1, then independent review of the revised candidate fixture/oracle draft, confirmation of fixed actor identity per episode, and freezing of the manifest and expected outputs. Implementation decisions for a minimal harness require a separate review at that point.
+**Next approved action:** owner-authorized merge of M2 PR #1, then independent review of the revised candidate fixture/oracle draft, confirmation of fixed actor identity per episode, and freezing of the manifest and expected outputs. Implementation decisions for a minimal harness require a separate review at that point.
 
 ## 10. Pre-registration simplification record (2026-11-02)
 
